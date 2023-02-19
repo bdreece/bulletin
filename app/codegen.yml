@@ -1,0 +1,11 @@
+schema: 'http://localhost:5052/graphql'
+ignoreNoDocuments: true
+documents:
+  - 'src/**/*.graphql.ts'
+generates:
+  './node_modules/@generated/graphql/':
+    preset: client
+    config:
+      useTypeImports: true
+      scalars:
+        DateTime: Date
