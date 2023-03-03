@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using HotChocolate.Authorization;
 using Microsoft.EntityFrameworkCore;
 
@@ -32,12 +33,20 @@ public partial class Query
 
 public partial class Mutation
 {
+    [Authorize(Roles = new[] { WellKnownRoles.User })]
+    [Error(typeof(UnauthorizedException))]
+    [Error(typeof(EntityNotFoundException))]
     public async Task<User> UpdateUserAsync(
         UpdateUserInput input,
         DataContext db,
+        ClaimsPrincipal principal,
         CancellationToken ct = default
     )
     {
+        _logger.Information("Authorizing user for resource...");
+        if (input.ID != principal.FindFirstValue(ClaimTypes.Sid))
+            throw new UnauthorizedException();
+
         _logger.Information("Querying user to update...");
         var user = await db.Users.FirstOrDefaultAsync(u => u.ID == input.ID, ct);
         if (user is null)

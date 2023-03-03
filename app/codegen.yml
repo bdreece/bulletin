@@ -1,11 +1,17 @@
-schema: 'http://localhost:5052/graphql'
+schema: 'http://localhost:8080/graphql'
 ignoreNoDocuments: true
 documents:
-  - 'src/**/*.graphql.ts'
+  - 'src/**/*.graphql'
 generates:
   './node_modules/@generated/graphql/':
     preset: client
+    presetConfig:
+      fragmentMasking: false
+    pluckConfig:
+      - name: graphql-tag
+        identifier: gql
     config:
+      dedupeFragments: true
       useTypeImports: true
       scalars:
         DateTime: Date

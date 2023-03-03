@@ -1,0 +1,56 @@
+#import Details_NamedEntity from 'metadata.graphql'
+
+fragment Full_Directory on Directory {
+  ...Details_NamedEntity
+
+  parentDirectory {
+    ...Details_NamedEntity
+  }
+
+  subDirectories {
+    ...Details_NamedEntity
+  }
+
+  documents {
+    ...Details_NamedEntity
+  }
+}
+
+fragment Full_Document on Document {
+  ...Details_NamedEntity
+  filename
+  directoryID
+}
+
+fragment Directories_Query on Query {
+  directories(where: { userID: { eq: $userID } }) {
+    ...Full_Directory
+  }
+}
+
+fragment Documents_Query on Query {
+  documents(where: { userID: { eq: $userID } }) {
+    ...Full_Document
+  }
+}
+
+query GetDirectories($userID: ID!) {
+  ...Directories_Query
+  ...Documents_Query
+}
+
+mutation CreateDirectory($input: CreateDirectoryInput!) {
+  createDirectory(input: $input) {
+    directory {
+      id
+    }
+  }
+}
+
+mutation CreateDocument($input: CreateDocumentInput!) {
+  createDocument(input: $input) {
+    document {
+      id
+    }
+  }
+}

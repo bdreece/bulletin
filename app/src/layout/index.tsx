@@ -1,4 +1,4 @@
-import type { AppShellProps } from '@mantine/core';
+import { AppShellProps, Box } from '@mantine/core';
 
 import { AppShell } from '@mantine/core';
 import { LayoutStateProvider } from '../components';
@@ -26,7 +26,9 @@ const Layout: React.FC = () => {
   return (
     <LayoutStateProvider>
       <AppShell {...appShell}>
-        <Outlet />
+        <Box pr='md'>
+          <Outlet />
+        </Box>
       </AppShell>
     </LayoutStateProvider>
   );

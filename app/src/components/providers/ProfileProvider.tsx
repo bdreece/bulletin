@@ -1,6 +1,6 @@
 import type { SelfResult } from '@generated/graphql/graphql';
 import type { Impartial } from '~/types/partial';
-import { useSelf } from '~/graphql/auth.graphql';
+import { useSelf } from '~/hooks/auth';
 import { createContext, useContext, useMemo, useEffect } from 'react';
 import { useAccessToken } from './AccessTokenProvider';
 
@@ -13,24 +13,18 @@ export type ProfileProviderProps = React.PropsWithChildren;
 
 const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) => {
   const { accessToken } = useAccessToken();
-  const { data, error } = useSelf(undefined, {
+  const { data } = useSelf(undefined, {
     fetchPolicy: accessToken ? 'cache-first' : 'cache-only',
   });
 
-  useEffect(
-    () => error && console.error('Error fetching profile: ', error.message),
-    [error],
-  );
+  const profile = {
+    id: data?.self?.id ?? null,
+    name: data?.self?.name ?? null,
+    email: data?.self?.email ?? null,
+    roles: data?.self?.roles ?? [],
+  };
 
-  const profile = useMemo(
-    () => ({
-      id: data?.self?.id ?? null,
-      name: data?.self?.name ?? null,
-      email: data?.self?.email ?? null,
-      roles: data?.self?.roles ?? [],
-    }),
-    [data],
-  );
+  useEffect(() => data && console.debug({ profile }), [data]);
 
   return <context.Provider value={profile}>{children}</context.Provider>;
 };

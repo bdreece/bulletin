@@ -9,11 +9,9 @@ using Bulletin.Server.Services;
 namespace Bulletin.Server.Models;
 
 [Table(nameof(Directory))]
-public sealed class Directory : EntityBase
+public sealed class Directory : NamedEntityBase
 {
-    private const string DEFAULT_NAME = "New Directory";
-
-    public string Name { get; private set; } = DEFAULT_NAME;
+    internal const string DEFAULT_NAME = "New Directory";
 
     [ForeignKey(nameof(ParentDirectory))]
     [ID(nameof(Directory))]
@@ -32,14 +30,13 @@ public sealed class Directory : EntityBase
         new List<Document>();
 
 #pragma warning disable CS8618
-    internal Directory() { }
+    internal Directory() : base(new(DEFAULT_NAME)) { }
 #pragma warning restore CS8618
 
-    public Directory(CreateDirectoryInput input) : base()
+    public Directory(CreateDirectoryInput input) : base(input)
     {
-        var (userID, parentDirectoryID, name) = input;
+        var (userID, parentDirectoryID, _, _) = input;
         UserID = userID;
-        Name = name ?? Name;
         ParentDirectoryID = parentDirectoryID;
     }
 
@@ -48,22 +45,22 @@ public sealed class Directory : EntityBase
 
     public void Update(UpdateDirectoryInput input)
     {
-        var (_, parentDirectoryID, name) = input;
-        Name = name ?? Name;
+        var (_, parentDirectoryID, _, _) = input;
         ParentDirectoryID = parentDirectoryID ?? ParentDirectoryID;
-
-        base.Update();
+        base.Update(input);
     }
 }
 
 public record CreateDirectoryInput(
     [property: ID(nameof(User))] string UserID,
     [property: ID(nameof(Directory))] string? ParentDirectoryID = default,
-    string? Name = default
-);
+    string? Name = default,
+    string? Description = default
+) : CreateNamedEntityInputBase(Name ?? Directory.DEFAULT_NAME, Description);
 
 public record UpdateDirectoryInput(
     [property: ID] string ID,
     [property: ID(nameof(Directory))] string? ParentDirectoryID = default,
-    string? Name = default
-);
+    string? Name = default,
+    string? Description = default
+) : UpdateNamedEntityInputBase(Name, Description);

@@ -1,9 +1,11 @@
+import type { Empty } from '~/types/empty';
 import type {
   MutationHookOptions,
   OperationVariables,
   QueryHookOptions,
   TypedDocumentNode,
 } from '@apollo/client';
+
 import { useQuery, useMutation } from '@apollo/client';
 
 type QueryOptions<
@@ -22,7 +24,7 @@ export const createQuery =
     defaultOptions?: QueryOptions<TData, TVariables> | undefined,
   ) =>
   (
-    variables?: TVariables | undefined,
+    variables?: Empty<TVariables> | undefined,
     options?: QueryOptions<TData, TVariables> | undefined,
   ) =>
     useQuery(node, {

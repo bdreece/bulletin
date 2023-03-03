@@ -1,0 +1,3 @@
+fragment Base_Error on Error {
+  message
+}

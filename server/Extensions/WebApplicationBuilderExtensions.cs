@@ -27,7 +27,7 @@ public static class WebApplicationBuilderExtensions
         builder.Services
             .AddBulletinOptions(builder.Configuration)
             .AddBulletinAuth()
-            .AddBulletinDatabase()
+            .AddBulletinDatabase(builder.Configuration)
             .AddBulletinGraphQL();
 
         logger.Verbose("Services initialized!");

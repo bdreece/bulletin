@@ -1,6 +1,4 @@
-using System.Text;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Serilog;
@@ -10,7 +8,6 @@ using Bulletin.Server.Models.Options;
 using Bulletin.Server.Services;
 
 using static Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults;
-using Path = System.IO.Path;
 
 namespace Bulletin.Server;
 
@@ -34,7 +31,8 @@ public static class IServiceCollectionExtensions
     {
         _logger.Verbose("Configuring authentication services...");
         using var sp = services.BuildServiceProvider();
-        var options = sp.GetRequiredService<IOptions<TokenOptions>>().Value;
+        var tokenOptions = sp.GetRequiredService<IOptions<TokenOptions>>().Value;
+        var authOptions = sp.GetRequiredService<IOptions<AuthOptions>>().Value;
 
         services.AddAuthentication(AuthenticationScheme)
             .AddJwtBearer(o =>
@@ -43,12 +41,12 @@ public static class IServiceCollectionExtensions
                 o.TokenValidationParameters = new()
                 {
                     ValidateAudience = true,
-                    ValidAudience = options.Audience,
+                    ValidAudience = tokenOptions.Audience,
                     ValidateIssuer = true,
-                    ValidIssuer = options.Issuer,
+                    ValidIssuer = tokenOptions.Issuer,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = options.SecurityKey,
+                    IssuerSigningKey = tokenOptions.SecurityKey,
                 };
             });
 
@@ -58,7 +56,7 @@ public static class IServiceCollectionExtensions
             .AddCors(o => o.AddDefaultPolicy(b => b
                 .AllowCredentials()
                 .AllowAnyHeader()
-                .WithOrigins(new[] { "http://localhost:5173" })))
+                .WithOrigins(authOptions.CorsOrigins.ToArray())))
             .AddScoped<IPasswordHasher<User>, PasswordHasher<User>>()
             .AddScoped<ITokenService, TokenService>();
 
@@ -66,16 +64,14 @@ public static class IServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddBulletinDatabase(this IServiceCollection services)
+    public static IServiceCollection AddBulletinDatabase(this IServiceCollection services, IConfiguration config)
     {
-        _logger.Verbose("Configuring SQLite database...");
-        var folder = Environment.SpecialFolder.ApplicationData;
-        var path = Environment.GetFolderPath(folder);
-        var source = Path.Join(path, "bulletin.db");
-        var connectionString = $"Data Source={source}";
+        _logger.Verbose("Configuring Postgres database...");
 
-        services.AddDbContextFactory<DataContext>(o =>
-            o.UseSqlite(connectionString));
+        var connectionString = config.GetConnectionString("postgres");
+        services.AddPooledDbContextFactory<DataContext>(o =>
+            o.UseNpgsql(connectionString, x =>
+                x.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
         _logger.Verbose("Database configured!");
         return services;

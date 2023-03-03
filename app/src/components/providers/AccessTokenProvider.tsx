@@ -2,38 +2,33 @@ import type { AccessTokenResult } from '@generated/graphql/graphql';
 
 import day from 'dayjs';
 import { createContext, useContext, useEffect } from 'react';
-import { useRefresh } from '~/graphql/auth.graphql';
+import { useRefresh } from '~/hooks/auth';
 
 export type AccessTokenContext = Omit<AccessTokenResult, '__typename'>;
+export type AccessTokenProviderProps = React.PropsWithChildren;
+
+export const ACCESS_TOKEN_KEY = 'BULLETIN_ACCESS_TOKEN';
+export const ACCESS_TOKEN_EXPIRATION_KEY = 'BULLETIN_ACCESS_TOKEN_EXPIRATION';
 
 const context = createContext<AccessTokenContext | undefined>(undefined);
 export const useAccessToken = (): Partial<AccessTokenContext> =>
   useContext(context) ?? {};
 
-export type AccessTokenProviderProps = React.PropsWithChildren;
-
 const AccessTokenProvider: React.FC<AccessTokenProviderProps> = ({
   children,
 }) => {
-  const { data, error } = useRefresh(undefined, {
-    nextFetchPolicy: () => {
-      const expiration = data?.refresh?.result?.expiration;
-      return expiration && day(expiration).isBefore(day())
-        ? 'cache-only'
-        : 'network-only';
-    },
-  });
+  const { data } = useRefresh();
 
-  useEffect(
-    () =>
-      error && console.error('Error refreshing access token: ', error.message),
-    [error],
-  );
+  const accessToken = data?.refresh.result?.accessToken ?? '';
+  const expiration = day(
+    data?.refresh.result?.expiration ?? new Date(),
+  ).toISOString();
+  localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  localStorage.setItem(ACCESS_TOKEN_EXPIRATION_KEY, expiration);
 
   useEffect(() => {
-    const accessToken = data?.refresh?.result?.accessToken;
-    accessToken && sessionStorage.setItem('BULLETIN_ACCESS_TOKEN', accessToken);
-  }, [data]);
+    console.debug({ accessToken, expiration });
+  }, [accessToken, expiration]);
 
   return (
     <context.Provider value={data?.refresh?.result ?? undefined}>

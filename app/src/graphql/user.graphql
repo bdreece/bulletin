@@ -1,0 +1,35 @@
+#import Base_Error from 'error.graphql'
+#import Metadata_Entity from 'metadata.graphql'
+
+fragment Metadata_User on User {
+  ...Metadata_Entity
+  firstName
+  lastName
+}
+
+fragment Details_User on User {
+  email
+}
+
+fragment Full_User on User {
+  ...Metadata_User
+  ...Details_User
+}
+
+fragment Profile_Query on Query {
+  user(where: { id: { eq: $userID } }) {
+    ...Full_User
+  }
+}
+
+query GetProfile($userID: ID!) {
+  ...Profile_Query
+}
+
+mutation UpdateUser($input: UpdateUserInput!) {
+  updateUser(input: $input) {
+    errors {
+      ...Base_Error
+    }
+  }
+}

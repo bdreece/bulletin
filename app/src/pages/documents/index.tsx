@@ -1,48 +1,104 @@
-import { ColProps, CardProps } from '@mantine/core';
+import type {
+  Full_DirectoryFragment,
+  Details_NamedEntityFragment,
+} from '@generated/graphql/graphql';
+import { Outlet } from 'react-router-dom';
+import { Button, Drawer, Group, Loader, Text } from '@mantine/core';
 
-import { Alert, Card, Grid, Loader } from '@mantine/core';
-import { useProfile } from '../../components/providers/ProfileProvider';
-import { useDocuments } from '../../graphql/document.graphql';
+import { filter } from 'lodash/fp';
+import { useState, useEffect } from 'react';
+import { ApolloAlert, Card, ContextBar, DirectoryTree } from '~/components';
+import { useDirectories } from '~/hooks/directory';
+import { useProfile } from '~/components/providers/ProfileProvider';
+import { DocumentCreateForm, DirectoryCreateForm } from '~/components';
 
-const Documents: React.FC = () => {
+export type DocumentLayoutState = {
+  directory: Full_DirectoryFragment | undefined;
+  setDirectory: (newDirectory?: Details_NamedEntityFragment) => void;
+};
+
+type DrawerState = {
+  opened: boolean;
+  form?: 'document' | 'directory' | undefined;
+};
+
+const DocumentLayout: React.FC = () => {
   const { id } = useProfile();
-  const { data, loading, error } = useDocuments(
-    {
-      where: {
-        id: { eq: id },
-      },
-    },
-    {
-      fetchPolicy: id ? 'cache-first' : 'standby',
-    },
+  const [{ opened, form }, setState] = useState<DrawerState>({ opened: false });
+  const toggle = () => setState(s => ({ ...s, opened: !opened }));
+  const toggleCreateDirectory = () =>
+    setState(s => ({
+      opened: !opened,
+      form: !s.form ? 'directory' : undefined,
+    }));
+
+  const toggleCreateDocument = () =>
+    setState(s => ({
+      opened: !opened,
+      form: !s.form ? 'document' : undefined,
+    }));
+
+  const { data, loading, error } = useDirectories({
+    userID: id!,
+  });
+
+  const directories = data?.directories ?? [];
+  const [directory, _setState] = useState<Full_DirectoryFragment>();
+
+  const state: DocumentLayoutState = {
+    directory,
+    setDirectory: newDirectory =>
+      _setState(directories.find(d => d.id == newDirectory?.id)),
+  };
+
+  const directoryTree = {
+    ...state,
+    directories: directory
+      ? filter(d => d.parentDirectory!.id === directory.id, directories)
+      : directories,
+  };
+
+  useEffect(
+    () => console.debug({ directories: directoryTree.directories }),
+    [directoryTree],
   );
 
   return (
-    <Grid>
-      {error ? (
-        <Alert title={error.name}>{error.message}</Alert>
-      ) : loading ? (
-        <Loader />
-      ) : (
-        data?.documents?.map(doc => (
-          <Grid.Col {...column}>
-            <Card {...card}>{doc.name}</Card>
-          </Grid.Col>
-        ))
-      )}
-    </Grid>
+    <>
+      <Card>
+        <ContextBar title='Documents'>
+          {directory && (
+            <Button onClick={_ => toggleCreateDocument()}>New Document</Button>
+          )}
+          <Button onClick={_ => toggleCreateDirectory()}>New Directory</Button>
+        </ContextBar>
+        {loading ? (
+          <Loader size='lg' />
+        ) : error ? (
+          <ApolloAlert error={error} />
+        ) : (
+          <Group>
+            <DirectoryTree {...directoryTree} />
+            <Outlet context={state} />
+          </Group>
+        )}
+      </Card>
+      <Drawer
+        opened={opened}
+        onClose={toggle}
+        position='right'
+      >
+        {form === 'directory' ? (
+          <DirectoryCreateForm />
+        ) : form === 'document' ? (
+          <DocumentCreateForm />
+        ) : (
+          'No form loaded!'
+        )}
+      </Drawer>
+    </>
   );
 };
 
-const column: Omit<ColProps, 'children'> = {
-  span: 3,
-};
-
-const card: Omit<CardProps, 'children'> = {
-  shadow: 'sm',
-  p: 'lg',
-  radius: 'md',
-  withBorder: true,
-};
-
-export default Documents;
+export { default as Document } from './DocumentDetail';
+export default DocumentLayout;

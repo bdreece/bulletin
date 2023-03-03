@@ -1,0 +1,11 @@
+fragment Metadata_Entity on Entity {
+  id
+  dateCreated
+  dateLastUpdated
+}
+
+fragment Details_NamedEntity on NamedEntity {
+  ...Metadata_Entity
+  name
+  description
+}

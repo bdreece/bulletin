@@ -1,11 +1,13 @@
 import type { NavbarProps } from '@mantine/core';
 
 import { useMemo } from 'react';
-import { Navbar as MantineNavbar, Text } from '@mantine/core';
-import { useLayoutState } from '../components/providers';
+import { NavLink } from '~/components';
+import { Navbar as MantineNavbar } from '@mantine/core';
+import { useLayoutState, useProfile } from '~/components/providers';
 
 const Navbar: React.FC = () => {
   const [opened] = useLayoutState();
+  const { id, name } = useProfile();
   const navbar = useMemo(
     (): Omit<NavbarProps, 'children'> => ({
       p: 'md',
@@ -21,7 +23,43 @@ const Navbar: React.FC = () => {
 
   return (
     <MantineNavbar {...navbar}>
-      <Text>Navbar</Text>
+      <MantineNavbar.Section grow>
+        <NavLink
+          to='/'
+          label='Home'
+        />
+        {id && (
+          <>
+            <NavLink
+              to='/documents'
+              label='Documents'
+            />
+            <NavLink
+              to='/calendars'
+              label='Calendars'
+            />
+          </>
+        )}
+      </MantineNavbar.Section>
+      <MantineNavbar.Section>
+        {name ? (
+          <NavLink
+            to='/profile'
+            label={name}
+          />
+        ) : (
+          <>
+            <NavLink
+              to='/auth/login'
+              label='Login'
+            />
+            <NavLink
+              to='/auth/register'
+              label='Sign Up'
+            />
+          </>
+        )}
+      </MantineNavbar.Section>
     </MantineNavbar>
   );
 };

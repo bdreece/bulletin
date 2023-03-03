@@ -1,5 +1,5 @@
 import type { HeaderProps, MediaQueryProps, BurgerProps } from '@mantine/core';
-import type { Styles } from 'types/styles';
+import type { Styles } from '~/types/styles';
 
 import { useMemo } from 'react';
 import {
@@ -9,7 +9,7 @@ import {
   Title,
   useMantineTheme,
 } from '@mantine/core';
-import { useLayoutState } from '../components/providers';
+import { useLayoutState } from '~/components/providers';
 
 const Header: React.FC = () => {
   const theme = useMantineTheme();
@@ -31,7 +31,7 @@ const Header: React.FC = () => {
         <MediaQuery {...mediaQuery}>
           <Burger {...burger} />
         </MediaQuery>
-        <Title>Application header</Title>
+        <Title>bulletin</Title>
       </div>
     </MantineHeader>
   );

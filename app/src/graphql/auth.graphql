@@ -1,0 +1,45 @@
+fragment AuthError on Error {
+  message
+}
+
+fragment Token on AccessTokenResult {
+  accessToken
+  expiration
+}
+
+mutation Register($input: RegisterInput!) {
+  register(input: $input) {
+    user {
+      id
+    }
+  }
+}
+
+mutation Login($input: LoginInput!) {
+  login(input: $input) {
+    result {
+      ...Token
+    }
+    errors {
+      ...AuthError
+    }
+  }
+}
+
+query Refresh {
+  refresh {
+    error
+    result {
+      ...Token
+    }
+  }
+}
+
+query Self {
+  self {
+    id
+    name
+    email
+    roles
+  }
+}
